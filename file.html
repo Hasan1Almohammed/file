@@ -6,44 +6,56 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 body {
-    background: #121212;
-    color: #eee;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
-    text-align:center;
+    display:flex; justify-content:center; align-items:center; height:100vh; text-align:center;
+    flex-direction:column;
+    transition: background 0.3s, color 0.3s;
 }
+body.dark { background: linear-gradient(to right,#0f2027,#203a43,#2c5364); color:#fff; }
+body.light { background:#f0f0f0; color:#111; }
+
 .loading {
-    background:#1e1e1e;
-    padding:30px;
-    border-radius:15px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.4);
-    font-size:18px;
-    color:#ffcc00;
+    padding:30px; border-radius:15px; box-shadow:0 4px 10px rgba(0,0,0,0.3);
+    font-size:18px; width:300px;
+    transition: background 0.3s, color 0.3s;
 }
+body.dark .loading { background: rgba(255,255,255,0.05); color:#ffcc00; }
+body.light .loading { background:#fff; color:#0077cc; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+
+footer {
+    margin-top:20px;
+    padding:10px 0;
+    text-align:center;
+    font-size:14px;
+    opacity:0.7;
+}
+body.dark footer { color:#fff; }
+body.light footer { color:#111; }
 </style>
 </head>
 <body>
 <div class="loading">جارٍ تحميل الملف...</div>
+<footer>Developer by Hasan | © 2026</footer>
 
 <script>
 const SUPABASE_URL = "https://tlmkjawlfszsxtdszvol.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_qYUNJQIlY_w12AXUwSAW_Q_l89ThqTB";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const fileName = location.hash.replace("#", "");
+// Dark/Light Mode تلقائي
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+document.body.classList.add(prefersDark ? 'dark' : 'light');
+
+const fileName = location.hash.replace("#","");
 const loadingDiv = document.querySelector('.loading');
 
-if (!fileName) {
+if(!fileName){
     loadingDiv.innerText = "ملف غير موجود";
-} else {
+}else{
     const { data } = supabaseClient.storage.from("uploads").getPublicUrl(fileName);
-    if (!data.publicUrl) {
+    if(!data.publicUrl){
         loadingDiv.innerText = "فشل تحميل الملف";
-    } else {
-        // إعادة التوجيه مباشرة إلى رابط الملف
+    }else{
         window.location.href = data.publicUrl;
     }
 }
