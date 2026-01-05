@@ -2,33 +2,50 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>تحميل ملف</title>
+<title>تحميل الملف</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body {
+    background: #121212;
+    color: #eee;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    text-align:center;
+}
+.loading {
+    background:#1e1e1e;
+    padding:30px;
+    border-radius:15px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.4);
+    font-size:18px;
+    color:#ffcc00;
+}
+</style>
 </head>
 <body>
-
-جارٍ تحميل الملف...
+<div class="loading">جارٍ تحميل الملف...</div>
 
 <script>
 const SUPABASE_URL = "https://tlmkjawlfszsxtdszvol.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_qYUNJQIlY_w12AXUwSAW_Q_l89ThqTB";
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const supabaseClient = supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY
-);
-
-// قراءة اسم الملف من #
 const fileName = location.hash.replace("#", "");
+const loadingDiv = document.querySelector('.loading');
 
 if (!fileName) {
-    document.body.innerText = "ملف غير موجود";
+    loadingDiv.innerText = "ملف غير موجود";
 } else {
-    const { data } = supabaseClient
-        .storage.from("uploads")
-        .getPublicUrl(fileName);
-
-    window.location.href = data.publicUrl;
+    const { data } = supabaseClient.storage.from("uploads").getPublicUrl(fileName);
+    if (!data.publicUrl) {
+        loadingDiv.innerText = "فشل تحميل الملف";
+    } else {
+        // إعادة التوجيه مباشرة إلى رابط الملف
+        window.location.href = data.publicUrl;
+    }
 }
 </script>
 
