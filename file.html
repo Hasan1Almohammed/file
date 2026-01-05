@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>تحميل ملف</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+جارٍ تحميل الملف...
+
+<script>
+const SUPABASE_URL = "https://tlmkjawlfszsxtdszvol.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_qYUNJQIlY_w12AXUwSAW_Q_l89ThqTB";
+
+const supabaseClient = supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+);
+
+// قراءة اسم الملف من #
+const fileName = location.hash.replace("#", "");
+
+if (!fileName) {
+    document.body.innerText = "ملف غير موجود";
+} else {
+    const { data } = supabaseClient
+        .storage.from("uploads")
+        .getPublicUrl(fileName);
+
+    window.location.href = data.publicUrl;
+}
+</script>
+
+</body>
+</html>
