@@ -2,148 +2,63 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>رفع ومشاركة ملفات</title>
+<title>تحميل الملف</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
-* { box-sizing: border-box; margin:0; padding:0; }
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    padding: 20px;
-    min-height: 100vh;
-}
-
-/* العناوين */
-h2 { margin-bottom: 15px; text-align:center; }
-
-/* الملفات */
-#files { margin-top:20px; display:flex; flex-direction:column; gap:12px; }
-.file {
-    padding:15px;
-    border-radius:12px;
-    border:1px solid #ccc;
-    display:flex;
+    display:flex; justify-content:center; align-items:center; height:100vh; text-align:center;
     flex-direction:column;
-    gap:10px;
+    transition: background 0.3s, color 0.3s;
 }
+body.dark { background: linear-gradient(to right,#0f2027,#203a43,#2c5364); color:#fff; }
+body.light { background:#f0f0f0; color:#111; }
 
-/* الأزرار */
-button {
-    padding: 8px 12px;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-    font-weight:bold;
+.loading {
+    padding:30px; border-radius:15px; box-shadow:0 4px 10px rgba(0,0,0,0.3);
+    font-size:18px; width:300px;
+    transition: background 0.3s, color 0.3s;
 }
-.btn-upload { background:#2196f3; color:#fff; }
-.btn-copy { background:#4caf50; color:#fff; }
-.btn-delete { background:#f44336; color:#fff; }
-
-.file-actions { display:flex; flex-wrap:wrap; gap:10px; }
-
-input[type="file"] {
-    padding: 8px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    width: 100%;
-}
+body.dark .loading { background: rgba(255,255,255,0.05); color:#ffcc00; }
+body.light .loading { background:#fff; color:#0077cc; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
 
 footer {
-    margin-top: 30px;
+    margin-top:20px;
+    padding:10px 0;
     text-align:center;
     font-size:14px;
     opacity:0.7;
 }
-
-@media(max-width:600px){
-    .file-actions { flex-direction: column; }
-    button { width:100%; }
-}
+body.dark footer { color:#fff; }
+body.light footer { color:#111; }
 </style>
 </head>
 <body>
-
-<h2>رفع ملف (أي نوع)</h2>
-<input type="file" id="fileInput">
-<button class="btn-upload" onclick="uploadFile()">رفع الملف</button>
-
-<hr>
-
-<h2>الملفات</h2>
-<div id="files"></div>
-
-<footer>
-    Developer by Hasan | © 2026
-</footer>
+<div class="loading">جارٍ تحميل الملف...</div>
+<footer>Developer by Hasan | © 2026</footer>
 
 <script>
-const supabaseClient = supabase.createClient(
- "https://tlmkjawlfszsxtdszvol.supabase.co",
- "sb_publishable_qYUNJQIlY_w12AXUwSAW_Q_l89ThqTB"
-);
+const SUPABASE_URL = "https://tlmkjawlfszsxtdszvol.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_qYUNJQIlY_w12AXUwSAW_Q_l89ThqTB";
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// رفع ملف
-async function uploadFile() {
-    const file = document.getElementById("fileInput").files[0];
-    if(!file) return alert("اختر ملف");
-    if(file.size > 50*1024*1024) return alert("الحد الأقصى 50MB");
+// Dark/Light Mode تلقائي
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+document.body.classList.add(prefersDark ? 'dark' : 'light');
 
-    const fileName = crypto.randomUUID()+"_"+file.name;
-    const { error } = await supabaseClient.storage
-        .from("uploads")
-        .upload(fileName, file);
+const fileName = location.hash.replace("#","");
+const loadingDiv = document.querySelector('.loading');
 
-    if(error) return alert("فشل رفع الملف");
-    loadFiles();
+if(!fileName){
+    loadingDiv.innerText = "ملف غير موجود";
+}else{
+    const { data } = supabaseClient.storage.from("uploads").getPublicUrl(fileName);
+    if(!data.publicUrl){
+        loadingDiv.innerText = "فشل تحميل الملف";
+    }else{
+        window.location.href = data.publicUrl;
+    }
 }
-
-// عرض الملفات
-async function loadFiles() {
-    const { data } = await supabaseClient.storage.from("uploads").list("");
-    const box = document.getElementById("files");
-    box.innerHTML = "";
-
-    data.forEach(f => {
-        const publicUrl = supabaseClient.storage
-            .from("uploads")
-            .getPublicUrl(f.name).data.publicUrl;
-
-        box.innerHTML += `
-        <div class="file">
-            <b>${f.name}</b>
-            <div class="file-actions">
-                <button class="btn-copy" onclick="copyLink('${publicUrl}')">نسخ رابط التنزيل</button>
-                <button class="btn-copy" onclick="downloadFile('${publicUrl}')">تنزيل</button>
-                <button class="btn-delete" onclick="deleteFile('${f.name}')">حذف</button>
-            </div>
-        </div>`;
-    });
-}
-
-// تنزيل مباشر
-function downloadFile(url){
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-}
-
-// حذف مع تأكيد
-async function deleteFile(name) {
-    if(!confirm("هل أنت متأكد من حذف الملف؟")) return;
-    await supabaseClient.storage.from("uploads").remove([name]);
-    loadFiles();
-}
-
-// نسخ رابط
-function copyLink(text){
-    navigator.clipboard.writeText(text);
-    alert("تم نسخ رابط التنزيل");
-}
-
-loadFiles();
 </script>
 
 </body>
