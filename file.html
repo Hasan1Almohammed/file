@@ -4,75 +4,62 @@
 <meta charset="UTF-8">
 <title>تحميل الملف</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
-body{
- font-family:Segoe UI,Tahoma;
- height:100vh;
- display:flex;
- align-items:center;
- justify-content:center;
- flex-direction:column;
- transition:.3s;
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display:flex; justify-content:center; align-items:center; height:100vh; text-align:center;
+    flex-direction:column;
+    transition: background 0.3s, color 0.3s;
 }
-body.dark{
- background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
- color:#fff;
-}
-body.light{
- background:#f3f3f3;
- color:#111;
-}
+body.dark { background: linear-gradient(to right,#0f2027,#203a43,#2c5364); color:#fff; }
+body.light { background:#f0f0f0; color:#111; }
 
-.card{
- background:rgba(255,255,255,.1);
- padding:30px;
- border-radius:16px;
- text-align:center;
- box-shadow:0 4px 15px rgba(0,0,0,.3);
+.loading {
+    padding:30px; border-radius:15px; box-shadow:0 4px 10px rgba(0,0,0,0.3);
+    font-size:18px; width:300px;
+    transition: background 0.3s, color 0.3s;
 }
+body.dark .loading { background: rgba(255,255,255,0.05); color:#ffcc00; }
+body.light .loading { background:#fff; color:#0077cc; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
 
-.loader{
- width:50px;
- height:50px;
- border:5px solid #aaa;
- border-top:5px solid #00e676;
- border-radius:50%;
- animation:spin 1s linear infinite;
- margin:15px auto;
+footer {
+    margin-top:20px;
+    padding:10px 0;
+    text-align:center;
+    font-size:14px;
+    opacity:0.7;
 }
-
-@keyframes spin{to{transform:rotate(360deg)}}
-
-footer{margin-top:20px;opacity:.7}
+body.dark footer { color:#fff; }
+body.light footer { color:#111; }
 </style>
 </head>
-
 <body>
-<div class="card">
-<h3>جارٍ تحميل الملف…</h3>
-<div class="loader"></div>
-</div>
-
+<div class="loading">جارٍ تحميل الملف...</div>
 <footer>Developer by Hasan | © 2026</footer>
 
 <script>
-const supabase=supabasejs.createClient(
- "https://tlmkjawlfszsxtdszvol.supabase.co",
- "sb_publishable_qYUNJQIlY_w12AXUwSAW_Q_l89ThqTB"
-);
+const SUPABASE_URL = "https://tlmkjawlfszsxtdszvol.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_qYUNJQIlY_w12AXUwSAW_Q_l89ThqTB";
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-document.body.classList.add(
- matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'
-);
+// Dark/Light Mode تلقائي
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+document.body.classList.add(prefersDark ? 'dark' : 'light');
 
-const name=location.hash.replace("#","");
-if(!name){
- document.querySelector("h3").innerText="ملف غير موجود";
+const fileName = location.hash.replace("#","");
+const loadingDiv = document.querySelector('.loading');
+
+if(!fileName){
+    loadingDiv.innerText = "ملف غير موجود";
 }else{
- const {data}=supabase.storage.from("uploads").getPublicUrl(name);
- location.href=data.publicUrl;
+    const { data } = supabaseClient.storage.from("uploads").getPublicUrl(fileName);
+    if(!data.publicUrl){
+        loadingDiv.innerText = "فشل تحميل الملف";
+    }else{
+        window.location.href = data.publicUrl;
+    }
 }
 </script>
+
 </body>
 </html>
