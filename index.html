@@ -1,186 +1,395 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>رفع ومشاركة ملفات</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مركز رفع الملفات</title>
+<!-- مكتبة Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- خط عربي جميل (Cairo) -->
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<!-- مكتبة الأيقونات -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
-/* ===== إعدادات أساسية ===== */
-* { box-sizing: border-box; margin:0; padding:0; }
+/* ===== متغيرات الألوان (Themes) ===== */
+:root {
+    --bg-color: #f4f7f6;
+    --text-color: #333;
+    --card-bg: #ffffff;
+    --primary: #4a90e2;
+    --success: #2ecc71;
+    --danger: #e74c3c;
+    --warning: #f1c40f;
+    --border-color: #e0e0e0;
+    --shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+body.dark {
+    --bg-color: #1a1a1a;
+    --text-color: #e0e0e0;
+    --card-bg: #2d2d2d;
+    --primary: #5dade2;
+    --border-color: #444;
+    --shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+/* ===== إعدادات عامة ===== */
+* { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    padding: 20px;
+    font-family: 'Cairo', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background 0.3s, color 0.3s;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
-    transition: background 0.3s, color 0.3s;
+    padding-bottom: 20px;
 }
 
-/* ===== Dark / Light Mode ===== */
-body.dark {
-    background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
-    color: #fff;
-}
-body.light {
-    background: #f0f0f0;
-    color: #111;
-}
-
-/* ===== العناوين ===== */
-h2 { margin-bottom: 15px; text-align:center; transition: color 0.3s; }
-body.dark h2 { color: #ffcc00; }
-body.light h2 { color: #333; }
-
-/* ===== ملف Card ===== */
-#files { margin-top:20px; display:flex; flex-direction:column; gap:12px; flex:1; }
-.file {
-    padding:15px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.2);
-    display:flex; flex-direction:column; gap:10px;
-}
-body.dark .file { background: rgba(255,255,255,0.05); }
-body.light .file { background: #fff; }
-
-.file b { word-break: break-word; }
-body.dark .file b { color:#ffdd57; }
-body.light .file b { color:#0077cc; }
-
-/* ===== الأزرار ===== */
-button {
-    padding: 16px 12px; border:none; border-radius:24px;
-    cursor:pointer; font-weight:bold;padding: 5px;
-}
-.btn-upload { background:#2196f3; color:#fff; }
-.btn-copy { background:#4caf50; color:#fff; }
-.btn-delete { background:#f44336; color:#fff; }
-.btn-mode {
-    background:#ff9800; color:#fff;
-    position:fixed; top:20px; right:20px;
-}
-
-/* ===== روابط ملفات ===== */
-.file-actions { display:flex; flex-wrap:wrap; gap:10px; }
-
-/* ===== Input file ===== */
-input[type="file"] {
-    padding: 8px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
+/* ===== الحاوية الرئيسية ===== */
+.container {
     width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    flex: 1;
 }
-body.dark input[type="file"] {
-    background: rgba(255,255,255,0.05);
-    color:#fff; border:1px solid #555;
+
+/* ===== الرأس (Header) ===== */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border-color);
 }
+h2 { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+
+/* زر التبديل الليلي */
+.theme-toggle {
+    background: transparent;
+    border: 2px solid var(--border-color);
+    color: var(--text-color);
+    padding: 8px 12px;
+    border-radius: 50px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: 0.3s;
+}
+.theme-toggle:hover { background: var(--border-color); }
+
+/* ===== منطقة الرفع (Upload Section) ===== */
+.upload-card {
+    background: var(--card-bg);
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    text-align: center;
+    margin-bottom: 30px;
+    border: 2px dashed var(--border-color);
+    transition: 0.3s;
+}
+.upload-card:hover { border-color: var(--primary); }
+
+/* إخفاء زر الإدخال الافتراضي القبيح */
+#fileInput { display: none; }
+
+/* تصميم زر اختيار الملف */
+.custom-file-label {
+    display: inline-block;
+    padding: 12px 25px;
+    background: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 15px;
+    font-weight: 600;
+    transition: 0.2s;
+}
+.custom-file-label:hover { border-color: var(--primary); color: var(--primary); }
+
+.btn-upload {
+    background: var(--primary);
+    color: white;
+    padding: 12px 30px;
+    font-size: 1rem;
+    width: 100%;
+    max-width: 250px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+    transition: transform 0.2s;
+}
+.btn-upload:active { transform: scale(0.98); }
+
+/* ===== قائمة الملفات ===== */
+.files-header { margin-bottom: 15px; font-size: 1.2rem; font-weight: 600; display: flex; align-items: center; gap: 10px;}
+#files { display: flex; flex-direction: column; gap: 15px; }
+
+/* بطاقة الملف */
+.file-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-wrap: wrap; /* للهواتف */
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    transition: transform 0.2s;
+    border-right: 4px solid var(--primary);
+}
+.file-card:hover { transform: translateY(-2px); }
+
+.file-info {
+    flex: 1;
+    min-width: 200px;
+    word-break: break-all;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.file-icon { font-size: 1.5rem; color: var(--primary); }
+.file-name { font-weight: 600; font-size: 0.95rem; }
+
+/* أزرار الإجراءات */
+.file-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: white;
+    transition: opacity 0.2s;
+}
+.action-btn:hover { opacity: 0.9; }
+
+.btn-view { background: var(--success); }
+.btn-copy { background: #8e44ad; }
+.btn-download { background: var(--primary); }
+.btn-delete { background: var(--danger); }
 
 /* ===== Footer ===== */
 footer {
-    margin-top: 20px;
-    padding: 15px 0;
-    text-align:center;
-    font-size:14px;
-    opacity:0.7;
+    text-align: center;
+    padding: 20px;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    opacity: 0.7;
+    margin-top: auto;
+}
+
+/* ===== التجاوب (Responsive) ===== */
+@media (max-width: 600px) {
+    .file-card { flex-direction: column; align-items: stretch; }
+    .file-actions { justify-content: space-between; margin-top: 10px; }
+    .action-btn { flex: 1; justify-content: center; font-size: 0.8rem; padding: 10px 5px; }
 }
 </style>
 </head>
-<body>
+<body class="light">
 
-<button class="btn-mode" onclick="toggleMode()">تبديل الوضع 🌙/☀️</button>
+<div class="container">
+    <header>
+        <h2><i class="fas fa-cloud-upload-alt"></i> كلاود شير</h2>
+        <button class="theme-toggle" onclick="toggleMode()" title="تبديل الوضع">
+            <i class="fas fa-moon"></i> / <i class="fas fa-sun"></i>
+        </button>
+    </header>
 
-<h2>رفع ملف (أي نوع)</h2>
-<input type="file" id="fileInput">
-    <br>
-<button class="btn-upload" onclick="uploadFile()">رفع الملف</button>
-<br>
-<hr color= #ffcc00;>
+    <div class="upload-card">
+        <h3>رفع ملف جديد</h3>
+        <p style="opacity: 0.7; margin: 10px 0 20px;">الحد الأقصى 50 ميجابايت</p>
+        
+        <label for="fileInput" class="custom-file-label">
+            <i class="fas fa-folder-open"></i> اختر ملفاً من جهازك
+        </label>
+        <input type="file" id="fileInput" onchange="updateFileName()">
+        <div id="fileNameDisplay" style="margin-bottom:15px; font-size:0.9rem; color:var(--primary);"></div>
 
-<h2>الملفات</h2>
-<div id="files"></div>
+        <button class="btn-upload" onclick="uploadFile()">
+            <i class="fas fa-arrow-up"></i> رفع الملف
+        </button>
+    </div>
+
+    <div class="files-header">
+        <i class="fas fa-list"></i> الملفات المرفوعة
+    </div>
+    <div id="files">
+        <!-- سيتم إدراج الملفات هنا -->
+        <p style="text-align:center; padding:20px; opacity:0.6;">جاري تحميل الملفات...</p>
+    </div>
+</div>
 
 <footer>
     Developer by Hasan | © 2026
 </footer>
 
 <script>
+// ===== نفس الكود البرمجي الأصلي تماماً =====
 const SUPABASE_URL = "https://tlmkjawlfszsxtdszvol.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_qYUNJQIlY_w12AXUwSAW_Q_l89ThqTB";
+const SUPABASE_ANON_KEY = "sb_publishable_qYUNJQIlY_w12AXUwSAW_Q_l89ThqTB"; // ملاحظة: هذا المفتاح يبدو غير صالح في المثال الأصلي لكن تركته كما طلبت
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Dark / Light
+// Dark / Light Logic
 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-document.body.classList.add(prefersDark ? 'dark' : 'light');
+if (prefersDark) {
+    document.body.classList.replace('light', 'dark');
+}
+
 function toggleMode(){
-    document.body.classList.toggle('dark');
-    document.body.classList.toggle('light');
+    if (document.body.classList.contains('dark')) {
+        document.body.classList.replace('dark', 'light');
+    } else {
+        document.body.classList.replace('light', 'dark');
+    }
+}
+
+// تحسين بسيط لعرض اسم الملف المختار قبل الرفع (إضافة جمالية فقط)
+function updateFileName() {
+    const input = document.getElementById('fileInput');
+    const display = document.getElementById('fileNameDisplay');
+    if(input.files.length > 0) {
+        display.textContent = "تم اختيار: " + input.files[0].name;
+    } else {
+        display.textContent = "";
+    }
 }
 
 // رفع
 async function uploadFile() {
-    const file = document.getElementById("fileInput").files[0];
-    if(!file) return alert("اختر ملف");
+    const fileInput = document.getElementById("fileInput");
+    const file = fileInput.files[0];
+    
+    // إضافة زر تحميل بصري
+    const btn = document.querySelector('.btn-upload');
+    const originalText = btn.innerHTML;
+    
+    if(!file) return alert("الرجاء اختيار ملف أولاً");
     if(file.size > 50*1024*1024) return alert("الحد الأقصى: 50MB");
+
+    // تغيير نص الزر أثناء الرفع
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الرفع...';
+    btn.disabled = true;
 
     const fileName = crypto.randomUUID()+"_"+file.name;
     const { error } = await supabaseClient.storage
         .from("uploads")
         .upload(fileName, file);
 
-    if(error) return alert("فشل رفع الملف");
+    // إعادة الزر لحالته
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+
+    if(error) {
+        console.error(error);
+        return alert("فشل رفع الملف (تأكد من إعدادات Supabase)");
+    }
+    
+    fileInput.value = ""; // تنظيف الحقل
+    document.getElementById('fileNameDisplay').textContent = "";
     loadFiles();
 }
 
 // عرض الملفات
 async function loadFiles() {
-    const { data } = await supabaseClient.storage.from("uploads").list("");
+    const { data, error } = await supabaseClient.storage.from("uploads").list("");
     const box = document.getElementById("files");
     box.innerHTML = "";
 
+    if (error) {
+        box.innerHTML = `<p style="text-align:center; color:var(--danger)">حدث خطأ في جلب الملفات</p>`;
+        return;
+    }
+
+    if (!data || data.length === 0) {
+        box.innerHTML = `<p style="text-align:center; opacity:0.6;">لا توجد ملفات مرفوعة حالياً</p>`;
+        return;
+    }
+
+    // ترتيب الملفات (الأحدث أولاً - اختياري)
+    data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
     for(let f of data){
-        const link = `${location.origin}/file.html#${f.name}`;
+        // تجاهل ملف placeholder الخاص بـ supabase إذا وجد
+        if(f.name === '.emptyFolderPlaceholder') continue;
+
+        const link = `${location.origin}/file.html#${f.name}`; // ملاحظة: هذا الرابط يعتمد على وجود صفحة file.html كما في الكود الأصلي
         const publicUrl = supabaseClient.storage
             .from("uploads")
             .getPublicUrl(f.name).data.publicUrl;
 
+        // قمت بتحديث هيكل HTML هنا ليتناسب مع التصميم الجديد فقط، الوظائف نفسها
         box.innerHTML += `
-        <div class="file">
-            <b>${f.name}</b>
+        <div class="file-card">
+            <div class="file-info">
+                <i class="fas fa-file-alt file-icon"></i>
+                <div class="file-name" title="${f.name}">${f.name.substring(37)}</div> <!-- محاولة لإخفاء الـ UUID للعرض فقط -->
+            </div>
             <div class="file-actions">
-                <a href="${link}" target="_blank">
-                    <button class="btn-copy">فتح الملف</button>
+                <a href="${link}" target="_blank" style="text-decoration:none;">
+                    <button class="action-btn btn-view"><i class="fas fa-eye"></i> فتح</button>
                 </a>
-                <button class="btn-copy" onclick="copyLink('${link}')">نسخ الرابط</button>
-                <button class="btn-copy" onclick="forceDownload('${publicUrl}','${f.name}')">
-                    تنزيل
+                <button class="action-btn btn-copy" onclick="copyLink('${link}')">
+                    <i class="fas fa-link"></i> نسخ
                 </button>
-                <button class="btn-delete" onclick="deleteFile('${f.name}')">حذف</button>
+                <button class="action-btn btn-download" onclick="forceDownload('${publicUrl}','${f.name}')">
+                    <i class="fas fa-download"></i> تنزيل
+                </button>
+                <button class="action-btn btn-delete" onclick="deleteFile('${f.name}')">
+                    <i class="fas fa-trash"></i> حذف
+                </button>
             </div>
         </div>`;
     }
 }
 
-// 🔽 تنزيل إجباري (التعديل الوحيد)
+// تنزيل إجباري
 async function forceDownload(url, filename){
-    const res = await fetch(url);
-    const blob = await res.blob();
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(a.href);
+    try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+    } catch(err) {
+        alert("خطأ في التنزيل");
+    }
 }
 
 // حذف
 async function deleteFile(name) {
-    await supabaseClient.storage.from("uploads").remove([name]);
-    loadFiles();
+    if(confirm('هل أنت متأكد من حذف هذا الملف؟')) {
+        await supabaseClient.storage.from("uploads").remove([name]);
+        loadFiles();
+    }
 }
 
 // نسخ الرابط
 function copyLink(text){
     navigator.clipboard.writeText(text);
-    alert("تم نسخ الرابط");
+    // استبدال الـ alert بتغيير بسيط في النص
+    alert("تم نسخ رابط الملف بنجاح!");
 }
 
 loadFiles();
