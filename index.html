@@ -158,7 +158,6 @@ h2 { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
 .file-icon { font-size: 1.5rem; color: var(--primary); }
 .file-name { font-weight: 600; font-size: 0.95rem; }
 
-/* أزرار الإجراءات */
 .file-actions {
     display: flex;
     gap: 8px;
@@ -228,6 +227,19 @@ footer {
         </button>
     </div>
 
+    <!-- ===== إعلان Adsterra Banner ===== -->
+    <div id="adsterra-banner" style="text-align:center; margin:20px 0;">
+      <script type="text/javascript">
+        (function() {
+          var ad = document.createElement('script');
+          ad.src = 'https://www.adsterra.com/servlet/realjs?zoneid=28330426';
+          ad.async = true;
+          ad.type = 'text/javascript';
+          document.getElementById('adsterra-banner').appendChild(ad);
+        })();
+      </script>
+    </div>
+
     <div class="files-header">
         <i class="fas fa-list"></i> الملفات المرفوعة
     </div>
@@ -242,9 +254,9 @@ footer {
 </footer>
 
 <script>
-// ===== نفس الكود البرمجي الأصلي تماماً =====
+// ===== كود Supabase ورفع الملفات =====
 const SUPABASE_URL = "https://tlmkjawlfszsxtdszvol.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_qYUNJQIlY_w12AXUwSAW_Q_l89ThqTB"; // ملاحظة: هذا المفتاح يبدو غير صالح في المثال الأصلي لكن تركته كما طلبت
+const SUPABASE_ANON_KEY = "sb_publishable_qYUNJQIlY_w12AXUwSAW_Q_l89ThqTB";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Dark / Light Logic
@@ -261,7 +273,6 @@ function toggleMode(){
     }
 }
 
-// تحسين بسيط لعرض اسم الملف المختار قبل الرفع (إضافة جمالية فقط)
 function updateFileName() {
     const input = document.getElementById('fileInput');
     const display = document.getElementById('fileNameDisplay');
@@ -272,19 +283,16 @@ function updateFileName() {
     }
 }
 
-// رفع
+// رفع الملفات
 async function uploadFile() {
     const fileInput = document.getElementById("fileInput");
     const file = fileInput.files[0];
-    
-    // إضافة زر تحميل بصري
     const btn = document.querySelector('.btn-upload');
     const originalText = btn.innerHTML;
-    
+
     if(!file) return alert("الرجاء اختيار ملف أولاً");
     if(file.size > 50*1024*1024) return alert("الحد الأقصى: 50MB");
 
-    // تغيير نص الزر أثناء الرفع
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الرفع...';
     btn.disabled = true;
 
@@ -293,7 +301,6 @@ async function uploadFile() {
         .from("uploads")
         .upload(fileName, file);
 
-    // إعادة الزر لحالته
     btn.innerHTML = originalText;
     btn.disabled = false;
 
@@ -302,7 +309,7 @@ async function uploadFile() {
         return alert("فشل رفع الملف (تأكد من إعدادات Supabase)");
     }
     
-    fileInput.value = ""; // تنظيف الحقل
+    fileInput.value = "";
     document.getElementById('fileNameDisplay').textContent = "";
     loadFiles();
 }
@@ -323,24 +330,20 @@ async function loadFiles() {
         return;
     }
 
-    // ترتيب الملفات (الأحدث أولاً - اختياري)
     data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     for(let f of data){
-        // تجاهل ملف placeholder الخاص بـ supabase إذا وجد
         if(f.name === '.emptyFolderPlaceholder') continue;
-
-        const link = `${location.origin}/file.html#${f.name}`; // ملاحظة: هذا الرابط يعتمد على وجود صفحة file.html كما في الكود الأصلي
+        const link = `${location.origin}/file.html#${f.name}`;
         const publicUrl = supabaseClient.storage
             .from("uploads")
             .getPublicUrl(f.name).data.publicUrl;
 
-        // قمت بتحديث هيكل HTML هنا ليتناسب مع التصميم الجديد فقط، الوظائف نفسها
         box.innerHTML += `
         <div class="file-card">
             <div class="file-info">
                 <i class="fas fa-file-alt file-icon"></i>
-                <div class="file-name" title="${f.name}">${f.name.substring(37)}</div> <!-- محاولة لإخفاء الـ UUID للعرض فقط -->
+                <div class="file-name" title="${f.name}">${f.name.substring(37)}</div>
             </div>
             <div class="file-actions">
                 <a href="${link}" target="_blank" style="text-decoration:none;">
@@ -360,7 +363,6 @@ async function loadFiles() {
     }
 }
 
-// تنزيل إجباري
 async function forceDownload(url, filename){
     try {
         const res = await fetch(url);
@@ -377,7 +379,6 @@ async function forceDownload(url, filename){
     }
 }
 
-// حذف
 async function deleteFile(name) {
     if(confirm('هل أنت متأكد من حذف هذا الملف؟')) {
         await supabaseClient.storage.from("uploads").remove([name]);
@@ -385,10 +386,8 @@ async function deleteFile(name) {
     }
 }
 
-// نسخ الرابط
 function copyLink(text){
     navigator.clipboard.writeText(text);
-    // استبدال الـ alert بتغيير بسيط في النص
     alert("تم نسخ رابط الملف بنجاح!");
 }
 
