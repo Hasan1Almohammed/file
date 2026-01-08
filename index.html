@@ -87,11 +87,24 @@ h2 { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
     border-radius: 16px;
     box-shadow: var(--shadow);
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 20px; /* تقليل المسافة قليلاً لوجود الإعلان */
     border: 2px dashed var(--border-color);
     transition: 0.3s;
 }
 .upload-card:hover { border-color: var(--primary); }
+
+/* تصميم منطقة الإعلان */
+.ad-card {
+    background: transparent;
+    margin: 20px 0;
+    text-align: center;
+    overflow: hidden; /* لمنع ظهور شريط تمرير إذا كان الإعلان عريضاً */
+    min-height: 90px; /* حجز مكان للإعلان لمنع قفز المحتوى */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 12px;
+}
 
 /* إخفاء زر الإدخال الافتراضي القبيح */
 #fileInput { display: none; }
@@ -227,18 +240,27 @@ footer {
         </button>
     </div>
 
-    <!-- ===== إعلان Adsterra Banner ===== -->
-    <div id="adsterra-banner" style="text-align:center; margin:20px 0;">
-      <script type="text/javascript">
-        (function() {
-          var ad = document.createElement('script');
-          ad.src = 'https://www.adsterra.com/servlet/realjs?zoneid=28330426';
-          ad.async = true;
-          ad.type = 'text/javascript';
-          document.getElementById('adsterra-banner').appendChild(ad);
-        })();
-      </script>
+    <!-- ===== مساحة الإعلان (Adsterra) ===== -->
+    <!-- تم وضعه هنا ليفصل بين منطقة الرفع والملفات -->
+    <div class="ad-card" id="adsterra-banner">
+        <script type="text/javascript">
+            // كود الإعلان برقم التعريف 28330426
+            // ملاحظة: إذا لم يظهر الإعلان، يفضل نسخ الكود كاملاً من لوحة تحكم Adsterra ولصقه هنا بدلاً من السكربت الحالي
+            (function() {
+                var ad = document.createElement('script');
+                ad.type = 'text/javascript';
+                ad.async = true;
+                // استخدام رابط JS المناسب لـ ZoneID
+                ad.src = 'https://www.adsterra.com/servlet/realjs?zoneid=28330426'; 
+                
+                var container = document.getElementById('adsterra-banner');
+                if(container) {
+                    container.appendChild(ad);
+                }
+            })();
+        </script>
     </div>
+    <!-- =================================== -->
 
     <div class="files-header">
         <i class="fas fa-list"></i> الملفات المرفوعة
